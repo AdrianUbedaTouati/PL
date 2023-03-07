@@ -1,8 +1,6 @@
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class AnalizadorLexico {
     private int filaFichero = 0;
@@ -19,124 +17,134 @@ public class AnalizadorLexico {
     public Token siguienteToken(){
         Token token = new Token();
         token.lexema = "";
+        String caracterString;
 
-        String caracterString = LecturaFichero();
+        do{
+            caracterString = LecturaFichero();
 
-        //System.out.println(caracterString);
+            token.columna = columnaFichero;
+            token.fila = filaFichero;
 
-        switch (Objects.requireNonNull(caracterString)){
-            case "(":
-                token.lexema = caracterString;
-                token.tipo = 0;
-                token.columna = columnaFichero;
-                break;
+            switch (caracterString) {
+                case "(":
+                    token.lexema = caracterString;
+                    token.tipo = 0;
+                    break;
 
-            case ")":
-                token.lexema = caracterString;
-                token.tipo = 1;
-                token.columna = columnaFichero;
-                break;
+                case ")":
+                    token.lexema = caracterString;
+                    token.tipo = 1;
+                    break;
 
-            case "*":
-                token.lexema = caracterString;
-                token.tipo = 2;
-                token.columna = columnaFichero;
-                break;
-            case "/":
-                token.lexema = caracterString;
-                token.tipo = 2;
-                token.columna = columnaFichero;
-                caracterString = LecturaFichero();
-                if(Objects.equals(caracterString, "/")) {
-                    token.lexema += caracterString;
-                }else{
-                    RetrocederFichero();
-                }
-                break;
+                case "*":
+                    token.lexema = caracterString;
+                    token.tipo = 2;
+                    break;
+                case "/":
+                    token.lexema = caracterString;
+                    token.tipo = 2;
+                    caracterString = LecturaFichero();
+                    if (Objects.equals(caracterString, "/")) {
+                        token.lexema += caracterString;
+                    } else {
+                        RetrocederFichero();
+                    }
+                    break;
 
-            case "+", "-":
-                token.lexema = caracterString;
-                token.tipo = 3;
-                token.columna = columnaFichero;
-                break;
+                case "+", "-":
+                    token.lexema = caracterString;
+                    token.tipo = 3;
+                    break;
 
-            case "<":
-                token.lexema = caracterString;
-                token.tipo = 4;
-                token.columna = columnaFichero;
-                caracterString = LecturaFichero();
-                if(Objects.equals(caracterString, "=") || Objects.equals(caracterString, ">")) {
-                    token.lexema += caracterString;
-                }else{
-                    RetrocederFichero();
-                }
-                break;
-            case ">":
-                token.lexema = caracterString;
-                token.tipo = 4;
-                token.columna = columnaFichero;
-                caracterString = LecturaFichero();
-                if(Objects.equals(caracterString, "=")) {
-                    token.lexema += caracterString;
-                }else{
-                    RetrocederFichero();
-                }
-                break;
-            case "=":
-                token.lexema = caracterString;
-                token.tipo = 4;
-                token.columna = columnaFichero;
-                break;
+                case "<":
+                    token.lexema = caracterString;
+                    token.tipo = 4;
+                    caracterString = LecturaFichero();
+                    if (Objects.equals(caracterString, "=") || Objects.equals(caracterString, ">")) {
+                        token.lexema += caracterString;
+                    } else {
+                        RetrocederFichero();
+                    }
+                    break;
+                case ">":
+                    token.lexema = caracterString;
+                    token.tipo = 4;
+                    caracterString = LecturaFichero();
+                    if (Objects.equals(caracterString, "=")) {
+                        token.lexema += caracterString;
+                    } else {
+                        RetrocederFichero();
+                    }
+                    break;
+                case "=":
+                    token.lexema = caracterString;
+                    token.tipo = 4;
+                    break;
 
-            case ";":
-                token.lexema = caracterString;
-                token.tipo = 5;
-                token.columna = columnaFichero;
-                break;
+                case ";":
+                    token.lexema = caracterString;
+                    token.tipo = 5;
+                    break;
 
-            case ":":
-                token.lexema = caracterString;
-                token.tipo = 6;
-                token.columna = columnaFichero;
-                caracterString = LecturaFichero();
-                if(Objects.equals(caracterString, "=")) {
-                    token.lexema += caracterString;
-                    token.tipo = 8;
-                    token.columna = columnaFichero;
-                }else{
-                    RetrocederFichero();
-                }
-                break;
+                case ":":
+                    token.lexema = caracterString;
+                    token.tipo = 6;
+                    caracterString = LecturaFichero();
+                    if (Objects.equals(caracterString, "=")) {
+                        token.lexema += caracterString;
+                        token.tipo = 8;
+                    } else {
+                        RetrocederFichero();
+                    }
+                    break;
 
-            case ",":
-                token.lexema = caracterString;
-                token.tipo = 7;
-                token.columna = columnaFichero;
-                break;
+                case ",":
+                    token.lexema = caracterString;
+                    token.tipo = 7;
+                    break;
+                case "\n":
+                    columnaFichero = 0;
+                    filaFichero++;
+                    break;
 
-            default:
-                RetrocederFichero();
-                token = LexemaExtensible(token);
-        }
+                default:
+                    if (IsANum(caracterString) || IsAlfa(caracterString)) {
+                        RetrocederFichero();
+                        token = LexemaExtensible(token);
+                    }
+            }
+        }while (token.lexema == "" && caracterString != "/n");
 
         return token;
     }
 
+    /**
+     * Es el metodo encargado de leer cada caracter del fichero,
+     * si detecta el fin del fichero cierra el programa con System.exit(-1)
+     * @return Caracter a leer
+     */
     private String LecturaFichero(){
+        String caracterString = new String();
         try{
             int caracterAscii = texto.read();
+            //Fin del fichero
+            if(caracterAscii == -1){
+                System.out.println("Error lexico: fin de fichero inesperado");
+                System.exit(-1);
+            }
 
-            String caracterString = Character.toString((char) caracterAscii);
-
+            caracterString = Character.toString((char) caracterAscii);
             columnaFichero++;
-            return caracterString;
-
         } catch (IOException e) {
             System.out.println("Error al leer el fichero" + e.getMessage());
         }
-        return null;
+        return caracterString;
     }
 
+    /**
+     * Se encagar de enviar el puntero de la lectura del fichero uno mas atras,
+     * cuando retrocede, columnaFichero disminuye en 1
+     */
     private void RetrocederFichero(){
         try{
             texto.seek(texto.getFilePointer()-1);
@@ -146,6 +154,11 @@ public class AnalizadorLexico {
         }
     }
 
+    /**
+     * Es el metodo encargado de crear los tokens variables
+     * @param token
+     * @return token
+     */
     private Token LexemaExtensible(Token token){
         String caracterString = LecturaFichero();
         if(IsANum(caracterString)){
@@ -153,7 +166,6 @@ public class AnalizadorLexico {
             do{
                 if(caracterString != ".") {
                     token.lexema += caracterString;
-                    token.columna = columnaFichero;
                 } else if(caracterString == "."){
                     caracterString = LecturaFichero();
                     RetrocederFichero();
@@ -162,7 +174,6 @@ public class AnalizadorLexico {
                     }else{
                         token.lexema += caracterString;
                         token.tipo = 25;
-                        token.columna = columnaFichero;
                     }
                 }
                 caracterString = LecturaFichero();
@@ -174,23 +185,39 @@ public class AnalizadorLexico {
             do{
                 //System.out.println(caracterString);
                 token.lexema += caracterString;
-                token.columna = columnaFichero;
                 caracterString = LecturaFichero();
             }while(IsAlfa(caracterString) || IsANum(caracterString));
+            RetrocederFichero();
         }
+        IsComand(token);
 
         return token;
     }
 
+    /**
+     * Verifica si el caracter pasado como parametro es un numero
+     * @param lexema
+     * @return
+     */
     public boolean IsANum(String lexema){
         return lexema != null && lexema.matches("[0-9]{1}");
     }
 
+    /**
+     * Verifica si el caracter pasado como parametro es una letra Minuscula o Mayuscula
+     * @param lexema
+     * @return
+     */
     public boolean IsAlfa(String lexema){
         return lexema.matches("[a-zA-Z]{1}");
     }
 
-    private void EsComando(Token token){
+    /**
+     * Verifica que el token no es un comando, antes de llamar a este metodo los tokens seran
+     * tratados como ID
+     * @param token
+     */
+    private void IsComand(Token token){
         switch (token.lexema){
             case "var":
                 token.tipo = 9;
