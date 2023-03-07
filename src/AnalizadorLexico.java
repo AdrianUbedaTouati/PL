@@ -14,14 +14,18 @@ public class AnalizadorLexico {
      * Devuelve el siguiente token del fichero
      * @return Token
      */
+    private boolean terminar = false;
     public Token siguienteToken(){
         Token token = new Token();
         token.lexema = "";
         String caracterString;
 
         do{
+            if(terminar){
+                System.out.println("Error lexico: fin de fichero inesperado");
+                System.exit(-1);
+            }
             caracterString = LecturaFichero();
-
             token.columna = columnaFichero;
             token.fila = filaFichero;
 
@@ -102,18 +106,25 @@ public class AnalizadorLexico {
                     token.lexema = caracterString;
                     token.tipo = 7;
                     break;
+
+                //Casos especiales
                 case "\n":
                     columnaFichero = 0;
                     filaFichero++;
+                    break;
+                case " ", "\t", "\r":
                     break;
 
                 default:
                     if (IsANum(caracterString) || IsAlfa(caracterString)) {
                         RetrocederFichero();
                         token = LexemaExtensible(token);
+                    }else{
+                        System.out.println("Error lexico ("+filaFichero+","+columnaFichero+"): caracter '"+caracterString+"' incorrecto");
+                        System.exit(-1);
                     }
             }
-        }while (token.lexema == "" && caracterString != "/n");
+        }while (token.lexema == "");
 
         return token;
     }
@@ -129,8 +140,7 @@ public class AnalizadorLexico {
             int caracterAscii = texto.read();
             //Fin del fichero
             if(caracterAscii == -1){
-                System.out.println("Error lexico: fin de fichero inesperado");
-                System.exit(-1);
+                terminar = true;
             }
 
             caracterString = Character.toString((char) caracterAscii);
