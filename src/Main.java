@@ -13,6 +13,12 @@ class plp1 {
                 AnalizadorSintacticoDR asdr = new AnalizadorSintacticoDR(al);
                 //añadido
                 System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
+
 
                 asdr.S(); // simbolo inicial de la gramatica
                 asdr.comprobarFinFichero();
