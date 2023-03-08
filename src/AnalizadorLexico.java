@@ -3,7 +3,7 @@ import java.io.RandomAccessFile;
 import java.util.Objects;
 
 public class AnalizadorLexico {
-    private int filaFichero = 0;
+    private int filaFichero = 1;
     private int columnaFichero = 0;
     RandomAccessFile texto;
     AnalizadorLexico(RandomAccessFile entrada) {
@@ -15,29 +15,42 @@ public class AnalizadorLexico {
      * @return Token
      */
     private boolean terminar = false;
+    private boolean comentario = false;
+
     public Token siguienteToken(){
         Token token = new Token();
         token.lexema = "";
         String caracterString;
 
         do{
+
             if(terminar){
-                System.out.println("Error lexico: fin de fichero inesperado");
-                System.exit(-1);
+                //System.out.println("Error lexico: fin de fichero inesperado");
+                System.exit(0);
             }
+
             caracterString = LecturaFichero();
+
             token.columna = columnaFichero;
             token.fila = filaFichero;
 
             switch (caracterString) {
                 case "(":
-                    token.lexema = caracterString;
-                    token.tipo = 0;
+                    caracterString = LecturaFichero();
+                    if (Objects.equals(caracterString, "*")) {
+                        comentario = true;
+                        EsComentario();
+                    } else {
+                        token.lexema = "(";
+                        token.tipo = 0;
+                        RetrocederFichero();
+                    }
                     break;
 
                 case ")":
                     token.lexema = caracterString;
                     token.tipo = 1;
+
                     break;
 
                 case "*":
@@ -108,19 +121,15 @@ public class AnalizadorLexico {
                     break;
 
                 //Casos especiales
-                case "\n":
-                    columnaFichero = 0;
-                    filaFichero++;
-                    break;
-                case " ", "\t", "\r":
+                case " ", "\t", "\r","\n":
                     break;
 
                 default:
                     if (IsANum(caracterString) || IsAlfa(caracterString)) {
                         RetrocederFichero();
                         token = LexemaExtensible(token);
-                    }else{
-                        System.out.println("Error lexico ("+filaFichero+","+columnaFichero+"): caracter '"+caracterString+"' incorrecto");
+                    } else {
+                        System.out.println("Error lexico (" + filaFichero + "," + columnaFichero + "): caracter '" + caracterString + "' incorrecto");
                         System.exit(-1);
                     }
             }
@@ -138,13 +147,19 @@ public class AnalizadorLexico {
         String caracterString = new String();
         try{
             int caracterAscii = texto.read();
+            //System.out.println(caracterAscii);
             //Fin del fichero
             if(caracterAscii == -1){
                 terminar = true;
             }
-
+            if(caracterAscii == 10){
+                columnaFichero = 0;
+                filaFichero++;
+            }else{
+                columnaFichero++;
+            }
             caracterString = Character.toString((char) caracterAscii);
-            columnaFichero++;
+
         } catch (IOException e) {
             System.out.println("Error al leer el fichero" + e.getMessage());
         }
@@ -158,6 +173,7 @@ public class AnalizadorLexico {
     private void RetrocederFichero(){
         try{
             texto.seek(texto.getFilePointer()-1);
+
             columnaFichero--;
         } catch (IOException e) {
             System.out.println("Error al leer el fichero" + e.getMessage());
@@ -286,5 +302,24 @@ public class AnalizadorLexico {
                 token.lexema = "'escribir'";
                 break;
         }
+    }
+
+    private void EsComentario() {
+        String caracterString;
+        do {
+            if (terminar) {
+                System.out.println("Error lexico: fin de fichero inesperado");
+                System.exit(-1);
+            }
+
+            caracterString = LecturaFichero();
+
+            if (Objects.equals(caracterString, "*")) {
+                caracterString = LecturaFichero();
+                if (Objects.equals(caracterString, ")")) {
+                    comentario = false;
+                }
+            }
+        } while (comentario);
     }
 }

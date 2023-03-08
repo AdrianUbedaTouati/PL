@@ -29,6 +29,23 @@ class plp1 {
                 System.out.println(al.siguienteToken());
                 System.out.println(al.siguienteToken());
                 System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
+                System.out.println(al.siguienteToken());
 
                 asdr.S(); // simbolo inicial de la gramatica
                 asdr.comprobarFinFichero();
