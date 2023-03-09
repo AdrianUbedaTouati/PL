@@ -16,6 +16,8 @@ public class AnalizadorLexico {
      */
     private boolean terminar = false;
     private boolean comentario = false;
+    private long ultimoSaltoLinea;
+    private int columnaAntigua;
 
     public Token siguienteToken(){
         Token token = new Token();
@@ -23,10 +25,9 @@ public class AnalizadorLexico {
         String caracterString;
 
         do{
-
             if(terminar){
-                //System.out.println("Error lexico: fin de fichero inesperado");
-                System.exit(0);
+                System.err.println("Error lexico: fin de fichero inesperado");
+                System.exit(-1);
             }
 
             caracterString = LecturaFichero();
@@ -68,7 +69,11 @@ public class AnalizadorLexico {
                     }
                     break;
 
-                case "+", "-":
+                case "+":
+                    token.lexema = caracterString;
+                    token.tipo = 3;
+                    break;
+                case "-":
                     token.lexema = caracterString;
                     token.tipo = 3;
                     break;
@@ -121,7 +126,13 @@ public class AnalizadorLexico {
                     break;
 
                 //Casos especiales
-                case " ", "\t", "\r","\n":
+                case " ":
+                    break;
+                case "\t":
+                    break;
+                case "\r":
+                    break;
+                case "\n":
                     break;
 
                 default:
@@ -129,11 +140,13 @@ public class AnalizadorLexico {
                         RetrocederFichero();
                         token = LexemaExtensible(token);
                     } else {
-                        System.out.println("Error lexico (" + filaFichero + "," + columnaFichero + "): caracter '" + caracterString + "' incorrecto");
-                        System.exit(-1);
+                        if(!Objects.equals(caracterString, "\n") && !Objects.equals(caracterString, " ") && !Objects.equals(caracterString, "\r") && !Objects.equals(caracterString, "\t")){
+                            System.err.println("Error lexico (" + filaFichero + "," + columnaFichero + "): caracter '" + caracterString + "' incorrecto");
+                            System.exit(-1);
+                        }
                     }
             }
-        }while (token.lexema == "");
+        }while (Objects.equals(token.lexema, ""));
 
         return token;
     }
@@ -147,21 +160,29 @@ public class AnalizadorLexico {
         String caracterString = new String();
         try{
             int caracterAscii = texto.read();
+            caracterString = Character.toString((char) caracterAscii);
             //System.out.println(caracterAscii);
             //Fin del fichero
             if(caracterAscii == -1){
                 terminar = true;
             }
-            if(caracterAscii == 10){
+            //System.out.println(caracterString);
+            //System.out.println(caracterString);
+            if(caracterAscii == 10 && ultimoSaltoLinea != texto.getFilePointer()){
+                ultimoSaltoLinea = texto.getFilePointer();
+
+                columnaAntigua = columnaFichero;
+
                 columnaFichero = 0;
                 filaFichero++;
             }else{
                 columnaFichero++;
+                //columnaAntigua = columnaFichero;
             }
-            caracterString = Character.toString((char) caracterAscii);
+
 
         } catch (IOException e) {
-            System.out.println("Error al leer el fichero" + e.getMessage());
+            System.err.println("Error al leer el fichero" + e.getMessage());
         }
         return caracterString;
     }
@@ -173,10 +194,9 @@ public class AnalizadorLexico {
     private void RetrocederFichero(){
         try{
             texto.seek(texto.getFilePointer()-1);
-
             columnaFichero--;
         } catch (IOException e) {
-            System.out.println("Error al leer el fichero" + e.getMessage());
+            System.err.println("Error al leer el fichero" + e.getMessage());
         }
     }
 
@@ -190,20 +210,24 @@ public class AnalizadorLexico {
         if(IsANum(caracterString)){
             token.tipo = 24;
             do{
-                if(caracterString != ".") {
+                if(!Objects.equals(caracterString, ".")) {
                     token.lexema += caracterString;
-                } else if(caracterString == "."){
+                } else if(Objects.equals(caracterString, ".")){
                     caracterString = LecturaFichero();
                     RetrocederFichero();
                     if(!IsANum(caracterString)){
+                        if(columnaFichero == -1){
+                            columnaFichero = columnaAntigua;
+                            filaFichero--;
+                        }
                         break;
                     }else{
-                        token.lexema += caracterString;
+                        token.lexema += ".";
                         token.tipo = 25;
                     }
                 }
                 caracterString = LecturaFichero();
-            }while(IsANum(caracterString) || caracterString == ".");
+            }while(IsANum(caracterString) || Objects.equals(caracterString, "."));
             RetrocederFichero();
         } else if(IsAlfa(caracterString)){
             token.tipo = 23;
@@ -247,59 +271,59 @@ public class AnalizadorLexico {
         switch (token.lexema){
             case "var":
                 token.tipo = 9;
-                token.lexema = "'var'";
+                token.lexema = "var";
                 break;
             case "real":
                 token.tipo = 10;
-                token.lexema = "'real'";
+                token.lexema = "real";
                 break;
             case "entero":
                 token.tipo = 11;
-                token.lexema = "'entero'";
+                token.lexema = "entero";
                 break;
             case "algoritmo":
                 token.tipo = 12;
-                token.lexema = "'algoritmo'";
+                token.lexema = "algoritmo";
                 break;
             case "blq":
                 token.tipo = 13;
-                token.lexema = "'blq'";
+                token.lexema = "blq";
                 break;
             case "fblq":
                 token.tipo = 14;
-                token.lexema = "'fblq'";
+                token.lexema = "fblq";
                 break;
             case "funcion":
                 token.tipo = 15;
-                token.lexema = "'funcion'";
+                token.lexema = "funcion";
                 break;
             case "si":
                 token.tipo = 16;
-                token.lexema = "'si'";
+                token.lexema = "si";
                 break;
             case "entonces":
                 token.tipo = 17;
-                token.lexema = "'entonces'";
+                token.lexema = "entonces";
                 break;
             case "sino":
                 token.tipo = 18;
-                token.lexema = "'sino'";
+                token.lexema = "sino";
                 break;
             case "fsi":
                 token.tipo = 19;
-                token.lexema = "'fsi'";
+                token.lexema = "fsi";
                 break;
             case "mientras":
                 token.tipo = 20;
-                token.lexema = "'mientras'";
+                token.lexema = "mientras";
                 break;
             case "hacer":
                 token.tipo = 21;
-                token.lexema = "'hacer'";
+                token.lexema = "hacer";
                 break;
             case "escribir":
                 token.tipo = 22;
-                token.lexema = "'escribir'";
+                token.lexema = "escribir";
                 break;
         }
     }
@@ -308,7 +332,7 @@ public class AnalizadorLexico {
         String caracterString;
         do {
             if (terminar) {
-                System.out.println("Error lexico: fin de fichero inesperado");
+                System.err.println("Error lexico: fin de fichero inesperado");
                 System.exit(-1);
             }
 
